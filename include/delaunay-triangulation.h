@@ -9,6 +9,7 @@
 #include <ostream>
 #include <string>
 #include <algorithm>
+#include <initializer_list>
 
 template<typename T>
 concept Floating = std::is_floating_point_v<T>;
@@ -19,25 +20,34 @@ concept Integral = std::integral<T>;
 template<typename T>
 concept Numeric = std::integral<T> || std::floating_point<T>;
 
+template<Numeric Float>
+class Edge;
+template<>
+class Edge<size_t>;
 
 template<Numeric Float>
+class Triangle;
+template<>
+class Triangle<size_t>;
+
+
+
+
+template<Numeric Float, size_t Dim = 2>
 class Vertex{
+  using Vec = std::array<Float, Dim>;
 private:
-    std::array<Float, 2> pos_m;
+    Vec pos_m;
 public:
     Vertex() = default;
     Vertex(const Vertex&) = default;
     Vertex(Vertex&&) = default;
     ~Vertex() = default;
-
-    Vertex(Float x, Float y)
-     : pos_m{x, y}
-    {}
-
-    Vertex(std::array<Float, 2> l)
-     : pos_m(l)
-    {}
-
+    Vertex(std::initializer_list<Float> l)
+     : pos_m()
+    {
+      std::copy(l.begin(), l.end(), pos_m.begin());
+    }
     Vertex& operator=(const Vertex&) = default;
     Vertex& operator=(Vertex&&) = default;
 
@@ -49,10 +59,17 @@ public:
     {
         return !(*this == b);
     }
-
     std::string to_string() const
     {
-        return "(" + std::to_string(pos_m[0]) + ", " + std::to_string(pos_m[1]) + ")";
+        std::string res = "(";
+        for(size_t i = 0; i < Dim; i++){
+          res += std::to_string(this->pos_m[i]);
+          if(i < Dim -1){
+            res += ", ";
+          }
+        }
+        res += ")";
+        return res;
     }
 
     friend std::ostream& operator<<(std::ostream& os, const Vertex& a)
@@ -65,20 +82,20 @@ public:
 template<Numeric Float>
 class Edge{
 private:
-    std::array<Float, 2> vertices_m;
+    std::array<Vertex<Float>, 2> vertices_m;
 public:
     Edge() = default;
     Edge(const Edge&) = default;
     Edge(Edge&&) = default;
     ~Edge() = default;
-
     Edge(const Vertex<Float>& a, const Vertex<Float>& b)
      : vertices_m{a, b}
     {}
-
     Edge(std::initializer_list<Vertex<Float>> l)
-     : vertices_m{l}
-    {}
+     : vertices_m()
+    {
+      std::copy(l.begin(), l.end(), vertices_m.begin());
+    }
 
     Edge& operator=(const Edge&) = default;
     Edge& operator=(Edge&&) = default;
@@ -88,23 +105,19 @@ public:
         return std::ranges::any_of(b.vertices_m, [&] (const Vertex<Float>& v) {return v == this->vertices_m[0];})
             && std::ranges::any_of(b.vertices_m, [&] (const Vertex<Float>& v) {return v == this->vertices_m[1];});
     }
-
     bool operator!=(const Edge& b) const
     {
         return !(*this == b);
     }
-
     std::string to_string() const
     {
         return "{" + vertices_m[0].to_string() + " <-> " + vertices_m[1].t_string() + "}";
     }
-
     friend std::ostream& operator<<(std::ostream& os, const Edge& a)
     {
         os << a.to_string();
         return os;
     }
-
     auto vertices() const
     {
         return vertices_m;
@@ -134,7 +147,6 @@ public:
     {
         return vertices_m.rend();
     }
-
     auto& front()
     {
         return vertices_m.front();
@@ -150,6 +162,7 @@ class Edge<size_t>{
    using Int = size_t;
 private:
     std::array<Int, 2> vertex_indices_m;
+    std::array<Int, 2> neighbors_m;
 public:
     Edge() = default;
     Edge(const Edge&) = default;
@@ -157,12 +170,14 @@ public:
     ~Edge() = default;
 
     Edge(const Int& a, const Int& b)
-     : vertex_indices_m{a, b}
+     : vertex_indices_m{a, b}, neighbors_m()
     {}
 
-    Edge(std::array<Int, 2> l)
-     : vertex_indices_m{l}
-    {}
+    Edge(std::initializer_list<Int> l)
+     :  vertex_indices_m(), neighbors_m()
+    {
+      std::copy(l.begin(), l.end(), vertex_indices_m.begin());
+    }
 
     Edge& operator=(const Edge&) = default;
     Edge& operator=(Edge&&) = default;
@@ -231,7 +246,7 @@ public:
 };
 
 template<Numeric Float>
-class Triangle{
+class Triangle {
 private:
     std::array<Vertex<Float>, 3> vertices_m;
 public:
@@ -244,9 +259,11 @@ public:
      : vertices_m{a, b, c}
     {}
 
-    Triangle(std::array<Vertex<Float>, 3> l)
-     : vertices_m{l}
-    {}
+    Triangle(std::initializer_list<Vertex<Float>> l)
+     : vertices_m()
+    {
+      std::copy(l.begin(), l.end(), vertices_m.begin());
+    }
 
     Triangle& operator=(const Triangle&) = default;
     Triangle& operator=(Triangle&&) = default;
@@ -315,9 +332,8 @@ public:
     {
         return vertices_m.back();
     }
-
-
 };
+
 template<>
 class Triangle<size_t>{
     using Int = size_t;
@@ -334,13 +350,11 @@ public:
      : vertex_indices_m{a, b, c}, neighbors_m()
     {}
 
-    Triangle(std::array<Int, 3> l)
-     : vertex_indices_m{l}, neighbors_m()
-    {}
-
-    Triangle(std::array<Int, 3> l, std::array<std::optional<Int>, 3> m)
-     : vertex_indices_m{l}, neighbors_m{m}
-    {}
+    Triangle(std::initializer_list<Int> l)
+     : vertex_indices_m(), neighbors_m()
+    {
+      std::copy(l.begin(), l.end(), vertex_indices_m.begin());
+    }
 
     Triangle& operator=(const Triangle&) = default;
     Triangle& operator=(Triangle&&) = default;
@@ -499,4 +513,24 @@ public:
 
     void triangulate(const std::vector<Vertex<Float>>& points);
 };
+
+namespace std{
+  template<Numeric Float>
+  string to_string(const Vertex<Float>& v)
+  {
+    return v.to_string();
+  }
+
+  template<class Float>
+  string to_string(const Edge<Float>& e)
+  {
+    return e.to_string();
+  }
+
+  template<Numeric Float>
+  string to_string(const Triangle<Float>& t){
+    return t.to_string();
+  }
+}
+
 #endif //DELAUNAY_TRIANGULATION_LIB_H
