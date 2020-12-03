@@ -17,7 +17,7 @@ template<typename T>
 concept Integral = std::integral<T>;
 
 template<typename T>
-concept Numeric = Integral<T> || Floating<T>;
+concept Numeric = std::integral<T> || std::floating_point<T>;
 
 
 template<Numeric Float>
@@ -323,6 +323,7 @@ class Triangle<size_t>{
     using Int = size_t;
 private:
     std::array<Int, 3> vertex_indices_m;
+    std::array<std::optional<Int>, 3> neighbors_m;
 public:
     Triangle() = default;
     Triangle(const Triangle&) = default;
@@ -330,11 +331,15 @@ public:
     ~Triangle() = default;
 
     Triangle(const Int& a, const Int& b, const Int& c)
-     : vertex_indices_m{a, b, c}
+     : vertex_indices_m{a, b, c}, neighbors_m()
     {}
 
     Triangle(std::array<Int, 3> l)
-     : vertex_indices_m{l}
+     : vertex_indices_m{l}, neighbors_m()
+    {}
+
+    Triangle(std::array<Int, 3> l, std::array<std::optional<Int>, 3> m)
+     : vertex_indices_m{l}, neighbors_m{m}
     {}
 
     Triangle& operator=(const Triangle&) = default;
@@ -363,6 +368,12 @@ public:
     {
         return vertex_indices_m;
     }
+
+    auto neighbors() const
+    {
+        return neighbors_m;
+    }
+
 
     friend std::ostream& operator<<(std::ostream& os, const Triangle& a)
     {
