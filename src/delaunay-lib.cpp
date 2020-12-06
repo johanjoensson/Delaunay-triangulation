@@ -3,12 +3,24 @@
 
 int main()
 {
-    Triangle<double> t1{{0.0, 0.0}, {1.0, 0.0}, {0.5, 1.0}}, t2({0.0, 0.0}, {0.5, -1.0}, {1.0, 0.0});
-    std::cout << t1 << " " << t2 << "\n";
     Delaunay<double, size_t> tri;
-    auto [ta, tb] = tri.flip({0, 1, 2}, {2, 3, 0});
+    tri.triangulate({{0.0, 0.0}, {1.0, 0.0}, {0.5, 1.0}, {1.5, 2.0}});
+//    auto [ta, tb] = tri.flip({0, 1, 2}, {2, 3, 0});
+    std::cout << "Triangles, with vertex indices:\n";
+    for(auto t : tri.triangles()){
+        std::cout << t <<", ";
+    }
+    std::cout << "\n";
+    std::cout << "Vertices:\n";
+    for(auto v : tri.vertices()){
+        std::cout << v <<", ";
+    }
+    std::cout << "\n";
+    std::cout << "Triangles, with vertices in coordinates:\n";
+    for(auto t : tri.triangles_coord()){
+        std::cout << t <<", ";
+    }
+    std::cout << "\n";
 
-    std::cout << "ta " << ta << "\n";
-    std::cout << "tb " << tb << "\n";
     return 0;
 }
